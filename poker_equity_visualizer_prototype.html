@@ -1,0 +1,256 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.tbl{background:#07160a;border-radius:14px;padding:26px 22px;font-family:var(--font-serif,Georgia,serif);color:#ddd5bc;max-width:800px;margin:0 auto;}
+.kicker{text-align:center;font-family:var(--font-mono,monospace);font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#b8943a;margin-bottom:4px;}
+h1{text-align:center;font-size:26px;font-weight:700;font-style:italic;color:#e8dfc8;margin-bottom:20px;}
+.pills{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
+.pill{background:#0e2210;border:1px solid rgba(184,148,58,0.18);color:#4a6650;padding:5px 14px;border-radius:20px;cursor:pointer;font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1px;transition:all 0.2s;white-space:nowrap;}
+.pill:hover,.pill.on{border-color:#b8943a;color:#b8943a;background:rgba(184,148,58,0.08);}
+.eq-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;}
+.eq-side{display:flex;flex-direction:column;gap:2px;}
+.eq-side.r{align-items:flex-end;}
+.eq-lbl{font-family:var(--font-mono,monospace);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#4a6650;}
+.eq-num{font-size:52px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;transition:color 0.4s;}
+.eq-num.g{color:#b8943a;}
+.eq-num.b{color:#4a85b0;}
+.eq-desc{font-size:11px;color:#4a6650;font-family:var(--font-mono,monospace);}
+.bar-wrap{height:11px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;margin-bottom:24px;}
+.bar-fill{height:100%;background:#b8943a;border-radius:6px;transition:width 0.7s cubic-bezier(0.34,1.56,0.64,1);}
+.board-lbl{font-family:var(--font-mono,monospace);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#4a6650;text-align:center;margin-bottom:10px;}
+.board{display:flex;gap:10px;justify-content:center;margin-bottom:24px;}
+.slot{width:70px;height:98px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);}
+.card{width:70px;height:98px;background:#f6f0e2;border-radius:8px;padding:5px;position:relative;display:flex;flex-direction:column;animation:flip 0.4s cubic-bezier(0.23,1,0.32,1) both;}
+@keyframes flip{from{transform:rotateY(90deg) scale(0.85);opacity:0;}to{transform:rotateY(0) scale(1);opacity:1;}}
+.card.na{animation:none;}
+.cr{display:flex;flex-direction:column;align-items:center;line-height:1;}
+.br{position:absolute;bottom:5px;right:5px;transform:rotate(180deg);}
+.rk{font-size:16px;font-weight:700;line-height:1;}
+.st{font-size:11px;line-height:1;}
+.cs{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:30px;opacity:0.1;}
+.red .rk,.red .st,.red .cs{color:#b52b2b;}
+.blk .rk,.blk .st,.blk .cs{color:#111;}
+.hands{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.hand{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;}
+.hl{font-family:var(--font-mono,monospace);font-size:10px;letter-spacing:3px;text-transform:uppercase;}
+.hl.g{color:#b8943a;}
+.hl.b{color:#4a85b0;}
+.hc{display:flex;gap:7px;}
+.vs{font-size:18px;font-weight:700;font-style:italic;color:#4a6650;opacity:0.4;flex-shrink:0;}
+.winner{text-align:center;min-height:40px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;}
+.wt{padding:9px 22px;border-radius:6px;font-size:16px;font-weight:700;font-style:italic;opacity:0;transition:opacity 0.5s;}
+.wt.show{opacity:1;}
+.wt.gw{background:rgba(184,148,58,0.12);border:1px solid rgba(184,148,58,0.3);color:#b8943a;}
+.wt.bw{background:rgba(74,133,176,0.12);border:1px solid rgba(74,133,176,0.3);color:#4a85b0;}
+.wt.tw{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#ddd5bc;}
+.btns{display:flex;gap:10px;justify-content:center;}
+.btn{background:transparent;border:1px solid #b8943a;color:#b8943a;padding:10px 26px;border-radius:4px;cursor:pointer;font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:all 0.2s;}
+.btn:hover{background:rgba(184,148,58,0.09);}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:0.22;cursor:not-allowed;}
+.btn.sec{border-color:rgba(255,255,255,0.15);color:#4a6650;}
+.btn.sec:hover{background:rgba(255,255,255,0.04);}
+.street-info{text-align:center;font-family:var(--font-mono,monospace);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#4a6650;margin-bottom:8px;min-height:14px;}
+</style>
+
+<div class="tbl">
+  <div class="kicker">Poker Equity Visualizer</div>
+  <h1>Every Card Changes Everything.</h1>
+  <div class="pills" id="pills"></div>
+  <div class="eq-row">
+    <div class="eq-side">
+      <div class="eq-lbl">Hero</div>
+      <div class="eq-num g" id="heq">—</div>
+      <div class="eq-desc" id="hd"></div>
+    </div>
+    <div class="eq-side r">
+      <div class="eq-lbl">Villain</div>
+      <div class="eq-num b" id="veq">—</div>
+      <div class="eq-desc" id="vd"></div>
+    </div>
+  </div>
+  <div class="bar-wrap"><div class="bar-fill" id="bar" style="width:50%"></div></div>
+  <div class="board-lbl">Community Cards</div>
+  <div class="board" id="board">
+    <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+  </div>
+  <div class="hands">
+    <div class="hand"><div class="hl g">Hero</div><div class="hc" id="hcards"></div></div>
+    <div class="vs">vs</div>
+    <div class="hand"><div class="hl b">Villain</div><div class="hc" id="vcards"></div></div>
+  </div>
+  <div class="street-info" id="sinfo"></div>
+  <div class="winner"><div class="wt" id="wt"></div></div>
+  <div class="btns">
+    <button class="btn" id="dealBtn">Deal Flop</button>
+    <button class="btn sec" id="resetBtn">New Hand</button>
+  </div>
+</div>
+
+<script>
+const SS={h:'♥',d:'♦',c:'♣',s:'♠'};
+const RL={11:'J',12:'Q',13:'K',14:'A'};
+const RED=new Set(['h','d']);
+const HN=['High Card','Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
+
+function rl(r){return RL[r]||''+r;}
+function ck(c){return c.r+'_'+c.s;}
+function mkDeck(){const d=[];['h','d','c','s'].forEach(s=>[2,3,4,5,6,7,8,9,10,11,12,13,14].forEach(r=>d.push({r,s})));return d;}
+function shuf(d){d=[...d];for(let i=d.length-1;i>0;i--){const j=0|Math.random()*(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
+function strip(dk,dead){const s=new Set(dead.map(ck));return dk.filter(c=>!s.has(ck(c)));}
+
+function combos(arr,k){
+  if(k===arr.length)return[arr];
+  if(k===1)return arr.map(x=>[x]);
+  const res=[];
+  for(let i=0;i<=arr.length-k;i++)combos(arr.slice(i+1),k-1).forEach(c=>res.push([arr[i],...c]));
+  return res;
+}
+
+function eval5(cs){
+  const rs=cs.map(c=>c.r).sort((a,b)=>b-a);
+  const suits=cs.map(c=>c.s);
+  const isF=suits.every(s=>s===suits[0]);
+  let isSt=false,stH=0;
+  if(rs[0]-rs[4]===4&&new Set(rs).size===5){isSt=true;stH=rs[0];}
+  if(rs[0]===14&&rs[1]===5&&rs[2]===4&&rs[3]===3&&rs[4]===2){isSt=true;stH=5;}
+  const rc={};rs.forEach(r=>rc[r]=(rc[r]||0)+1);
+  const cts=Object.values(rc).sort((a,b)=>b-a);
+  const crs=Object.entries(rc).sort((a,b)=>b[1]-a[1]||b[0]-a[0]).map(e=>+e[0]);
+  let hr,tb;
+  if(isF&&isSt){hr=8;tb=[stH];}
+  else if(cts[0]===4){hr=7;tb=crs;}
+  else if(cts[0]===3&&cts[1]===2){hr=6;tb=crs;}
+  else if(isF){hr=5;tb=rs;}
+  else if(isSt){hr=4;tb=[stH];}
+  else if(cts[0]===3){hr=3;tb=crs;}
+  else if(cts[0]===2&&cts[1]===2){hr=2;tb=crs;}
+  else if(cts[0]===2){hr=1;tb=crs;}
+  else{hr=0;tb=rs;}
+  const score=hr*1e10+tb.reduce((a,v,i)=>a+v*Math.pow(100,4-i),0);
+  return{hr,score};
+}
+
+function best(hole,board){
+  const all=[...hole,...board],cs=combos(all,5);
+  let b=null;
+  cs.forEach(c=>{const v=eval5(c);if(!b||v.score>b.score)b=v;});
+  return b;
+}
+
+function monteCarlo(h,v,board,n=4000){
+  const avail=strip(mkDeck(),[...h,...v,...board]);
+  let hw=0,vw=0,t=0;
+  const need=5-board.length;
+  for(let i=0;i<n;i++){
+    const sh=shuf(avail),fb=[...board,...sh.slice(0,need)];
+    const he=best(h,fb),ve=best(v,fb);
+    if(he.score>ve.score)hw++;else if(ve.score>he.score)vw++;else t++;
+  }
+  return{hero:(hw+t*.5)/n*100,villain:(vw+t*.5)/n*100};
+}
+
+const SCENS=[
+  {name:'AA vs KK',hero:[{r:14,s:'h'},{r:14,s:'d'}],villain:[{r:13,s:'s'},{r:13,s:'c'}],hd:'Pocket Rockets',vd:'Cowboys'},
+  {name:'AKs vs QQ',hero:[{r:14,s:'s'},{r:13,s:'s'}],villain:[{r:12,s:'h'},{r:12,s:'c'}],hd:'Big Slick suited',vd:'Ladies'},
+  {name:'Coin Flip',hero:[{r:14,s:'h'},{r:9,s:'d'}],villain:[{r:7,s:'s'},{r:7,s:'c'}],hd:'Two overcards',vd:'Small pair'},
+  {name:'Set-up',hero:[{r:10,s:'h'},{r:10,s:'d'}],villain:[{r:9,s:'s'},{r:8,s:'c'}],hd:'Overpair',vd:'Open-ender'},
+  {name:'Kicker war',hero:[{r:14,s:'h'},{r:10,s:'c'}],villain:[{r:14,s:'d'},{r:5,s:'h'}],hd:'ATo',vd:'A5o'}
+];
+
+let ST={sc:null,board:[],full:[],street:0,done:false};
+
+function cardHTML(c,na){
+  const col=RED.has(c.s)?'red':'blk';
+  return`<div class="card${na?' na':''} ${col}"><div class="cr"><span class="rk">${rl(c.r)}</span><span class="st">${SS[c.s]}</span></div><span class="cs">${SS[c.s]}</span><div class="cr br"><span class="rk">${rl(c.r)}</span><span class="st">${SS[c.s]}</span></div></div>`;
+}
+
+function setEq(hp,vp){
+  document.getElementById('heq').textContent=Math.round(hp)+'%';
+  document.getElementById('veq').textContent=Math.round(vp)+'%';
+  document.getElementById('bar').style.width=hp+'%';
+}
+
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function updateBtn(){
+  const b=document.getElementById('dealBtn');
+  const labels=['Deal Flop','Deal Turn','Deal River'];
+  b.textContent=ST.done?'River Dealt':(labels[ST.street]||'Done');
+  b.disabled=ST.street>=3;
+}
+
+function setStreetInfo(txt){document.getElementById('sinfo').textContent=txt;}
+
+function showWinner(){
+  const he=best(ST.sc.hero,ST.board),ve=best(ST.sc.villain,ST.board);
+  const wt=document.getElementById('wt');
+  if(he.score>ve.score){wt.textContent='Hero wins — '+HN[he.hr];wt.className='wt gw show';}
+  else if(ve.score>he.score){wt.textContent='Villain wins — '+HN[ve.hr];wt.className='wt bw show';}
+  else{wt.textContent='Split pot — Chopped';wt.className='wt tw show';}
+}
+
+async function deal(){
+  document.getElementById('dealBtn').disabled=true;
+  const slots=document.querySelectorAll('#board .slot');
+  const streets=['Flop','Turn','River'];
+  
+  if(ST.street===0){
+    for(let i=0;i<3;i++){await delay(180);ST.board.push(ST.full[i]);slots[i].innerHTML=cardHTML(ST.board[i]);}
+    await delay(120);
+    const eq=monteCarlo(ST.sc.hero,ST.sc.villain,ST.board);
+    setEq(eq.hero,eq.villain);
+    setStreetInfo('After flop · '+Math.round(eq.hero)+'% vs '+Math.round(eq.villain)+'%');
+    ST.street=1;
+  } else if(ST.street===1){
+    await delay(100);
+    ST.board.push(ST.full[3]);slots[3].innerHTML=cardHTML(ST.board[3]);
+    await delay(220);
+    const eq=monteCarlo(ST.sc.hero,ST.sc.villain,ST.board);
+    setEq(eq.hero,eq.villain);
+    setStreetInfo('After turn · '+Math.round(eq.hero)+'% vs '+Math.round(eq.villain)+'%');
+    ST.street=2;
+  } else if(ST.street===2){
+    await delay(100);
+    ST.board.push(ST.full[4]);slots[4].innerHTML=cardHTML(ST.board[4]);
+    await delay(380);
+    const he=best(ST.sc.hero,ST.board),ve=best(ST.sc.villain,ST.board);
+    const hw=he.score>ve.score,tie=he.score===ve.score;
+    setEq(tie?50:hw?100:0,tie?50:hw?0:100);
+    setStreetInfo('River · All 5 community cards dealt');
+    ST.street=3;ST.done=true;
+    await delay(450);showWinner();
+  }
+  updateBtn();
+  if(!ST.done)document.getElementById('dealBtn').disabled=false;
+}
+
+function load(idx){
+  const sc=SCENS[idx];
+  const avail=strip(mkDeck(),[...sc.hero,...sc.villain]);
+  ST={sc,board:[],full:shuf(avail).slice(0,5),street:0,done:false};
+  document.querySelectorAll('.pill').forEach((p,i)=>p.classList.toggle('on',i===idx));
+  document.getElementById('hcards').innerHTML=sc.hero.map(c=>cardHTML(c,true)).join('');
+  document.getElementById('vcards').innerHTML=sc.villain.map(c=>cardHTML(c,true)).join('');
+  document.getElementById('hd').textContent=sc.hd;
+  document.getElementById('vd').textContent=sc.vd;
+  document.querySelectorAll('#board .slot').forEach(s=>s.innerHTML='');
+  document.getElementById('wt').className='wt';
+  setStreetInfo('Preflop · 4,000 simulations running...');
+  const eq=monteCarlo(sc.hero,sc.villain,[]);
+  setEq(eq.hero,eq.villain);
+  setStreetInfo('Preflop equity · '+Math.round(eq.hero)+'% Hero / '+Math.round(eq.villain)+'% Villain');
+  updateBtn();
+  document.getElementById('dealBtn').disabled=false;
+}
+
+const pe=document.getElementById('pills');
+SCENS.forEach((sc,i)=>{
+  const b=document.createElement('button');b.className='pill';b.textContent=sc.name;b.onclick=()=>load(i);pe.appendChild(b);
+});
+document.getElementById('dealBtn').onclick=deal;
+document.getElementById('resetBtn').onclick=()=>{
+  const on=document.querySelector('.pill.on');
+  load(on?[...document.querySelectorAll('.pill')].indexOf(on):0);
+};
+load(0);
+</script>
