@@ -14,7 +14,6 @@ export type CardInputProps = {
 export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
   const [value, setValue] = useState(formatCards(cards))
   const [shaking, setShaking] = useState(false)
-  const [tooltipVisible, setTooltipVisible] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const deadSet = new Set(deadCards.map(cardKey))
@@ -25,7 +24,7 @@ export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
     setShaking(true)
     setTimeout(() => {
       setShaking(false)
-      setValue(formatCards(cards)) // revert
+      setValue(formatCards(cards))
     }, 600)
   }
 
@@ -56,9 +55,9 @@ export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
         style={{
           width: 80,
           background: 'var(--felt-mid)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
           borderRadius: 3,
-          color: 'var(--parchment)',
+          color: 'var(--ivory)',
           fontFamily: 'var(--font-mono), monospace',
           fontSize: 11,
           textAlign: 'center',
@@ -70,24 +69,23 @@ export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
         placeholder="Ah Kd"
       />
 
-      {/* Tooltip */}
+      {/* Tooltip — x: '-50%' lets Framer Motion handle centering without CSS transform conflict */}
       <AnimatePresence>
         {showTooltip && (
           <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
+            initial={{ opacity: 0, y: 6, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 6, x: '-50%' }}
             transition={{ duration: 0.15 }}
             style={{
               position: 'absolute',
               bottom: 'calc(100% + 10px)',
               left: '50%',
-              transform: 'translateX(-50%)',
-              width: 220,
-              background: 'var(--felt-deep, #0d1a12)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 5,
-              padding: '10px 12px',
+              width: 240,
+              background: '#0a1a0d',
+              border: '1px solid rgba(184,148,58,0.3)',
+              borderRadius: 6,
+              padding: '12px 14px',
               zIndex: 1000,
               pointerEvents: 'none',
             }}
@@ -97,65 +95,79 @@ export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
               position: 'absolute',
               bottom: -5,
               left: '50%',
-              transform: 'translateX(-50%)',
+              marginLeft: -4,
               width: 8,
               height: 8,
-              background: 'var(--felt-deep, #0d1a12)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#0a1a0d',
+              border: '1px solid rgba(184,148,58,0.3)',
               borderTop: 'none',
               borderLeft: 'none',
-              rotate: '45deg',
+              transform: 'rotate(45deg)',
             }} />
 
             {/* Text shorthand section */}
             <p style={{
               fontFamily: 'var(--font-mono), monospace',
-              fontSize: 9,
-              letterSpacing: 1.5,
+              fontSize: 10,
+              letterSpacing: 2,
               textTransform: 'uppercase',
               color: 'var(--gold)',
-              margin: '0 0 6px 0',
+              margin: '0 0 8px 0',
             }}>
               Text shorthand
             </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
+              {[
+                ['Ace of Spades', 'As'],
+                ['King of Hearts', 'Kh'],
+                ['9 of Clubs', '9c'],
+                ['Ten of Diamonds', 'Td'],
+              ].map(([name, code]) => (
+                <div key={code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, color: 'var(--parchment)' }}>
+                    {name}
+                  </span>
+                  <span style={{
+                    fontFamily: 'var(--font-mono), monospace',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--gold)',
+                    marginLeft: 10,
+                  }}>
+                    {code}
+                  </span>
+                </div>
+              ))}
+            </div>
+
             <p style={{
               fontFamily: 'var(--font-mono), monospace',
               fontSize: 10,
-              color: 'var(--ivory-dim)',
-              margin: '0 0 4px 0',
-              lineHeight: 1.5,
-            }}>
-              Type two cards e.g. <span style={{ color: 'var(--gold)' }}>As Kh</span>
-            </p>
-            <p style={{
-              fontFamily: 'var(--font-mono), monospace',
-              fontSize: 9,
               color: 'var(--ghost)',
-              margin: '0 0 8px 0',
-              lineHeight: 1.6,
+              margin: '0 0 10px 0',
             }}>
-              Ranks: 2–9, T, J, Q, K, A<br />
-              Suits: s ♠ h ♥ d ♦ c ♣
+              Suits: s ♠  h ♥  d ♦  c ♣
             </p>
 
             {/* Divider */}
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 0 8px 0' }} />
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 0 10px 0' }} />
 
             {/* Card picker section */}
             <p style={{
               fontFamily: 'var(--font-mono), monospace',
-              fontSize: 9,
-              letterSpacing: 1.5,
+              fontSize: 10,
+              letterSpacing: 2,
               textTransform: 'uppercase',
               color: 'var(--gold)',
-              margin: '0 0 4px 0',
+              margin: '0 0 6px 0',
             }}>
               Visual picker
             </p>
             <p style={{
               fontFamily: 'var(--font-mono), monospace',
-              fontSize: 10,
-              color: 'var(--ghost)',
+              fontSize: 11,
+              color: 'var(--parchment)',
               margin: 0,
               lineHeight: 1.5,
             }}>

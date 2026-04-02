@@ -14,9 +14,11 @@ export function useEquity(): {
   result: EquityResult | null
   isCalculating: boolean
   calculate: (players: Card[][], playerIds: string[], board: Card[]) => void
+  workerVersion: number
 } {
   const [result, setResult] = useState<EquityResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [workerVersion, setWorkerVersion] = useState(0)
 
   const workerRef = useRef<Worker | null>(null)
   const latestIdRef = useRef<number>(0)
@@ -39,6 +41,9 @@ export function useEquity(): {
       })
       setIsCalculating(false)
     }
+
+    // Signal that this worker instance is ready to receive messages
+    setWorkerVersion(v => v + 1)
 
     return () => {
       worker.terminate()
@@ -68,5 +73,5 @@ export function useEquity(): {
     [],
   )
 
-  return { result, isCalculating, calculate }
+  return { result, isCalculating, calculate, workerVersion }
 }
