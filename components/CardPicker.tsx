@@ -13,6 +13,7 @@ export type CardPickerProps = {
   outsCards?: Card[]
   outsBeneficiary?: string[]
   playerColors?: Record<string, { main: string; dim: string }>
+  anchorRect?: DOMRect | null
 }
 
 const SUITS: Suit[] = ['s', 'h', 'd', 'c']
@@ -28,11 +29,47 @@ export function CardPicker({
   outsCards,
   outsBeneficiary,
   playerColors,
+  anchorRect,
 }: CardPickerProps) {
   const deadSet = new Set(deadCards.map(cardKey))
   const outsSet = new Map<string, string>(
     (outsCards ?? []).map((c, i) => [cardKey(c), outsBeneficiary?.[i] ?? ''])
   )
+
+  // Responsive cell sizing: shrink on narrow viewports so the grid always fits
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 800
+  const isMobile = vw < 560
+  const cellW = isMobile ? 24 : 38
+  const cellH = isMobile ? 33 : 50
+  const cellGap = isMobile ? 2 : 4
+  const pad = isMobile ? 10 : 20
+  // Total picker dimensions (grid + padding + close button row)
+  const pickerW = 13 * cellW + 12 * cellGap + pad * 2
+  const pickerH = 4 * cellH + 3 * cellGap + pad * 2 + 28
+
+  // Compute fixed position anchored near the clicked card, clamped to viewport
+  const computePos = (): React.CSSProperties => {
+    if (!anchorRect) {
+      return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+    }
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+    const margin = 8
+
+    // Center horizontally on the card, prefer appearing above it
+    let left = anchorRect.left + anchorRect.width / 2 - pickerW / 2
+    let top = anchorRect.top - pickerH - 10
+
+    // Clamp horizontal
+    left = Math.max(margin, Math.min(left, vw - pickerW - margin))
+
+    // If not enough room above, flip below
+    if (top < margin) top = anchorRect.bottom + 10
+
+    // Clamp vertical
+    top = Math.max(margin, Math.min(top, vh - pickerH - margin))
+
+    return { position: 'fixed', left, top }
+  }
 
   return (
     <AnimatePresence>
@@ -47,7 +84,7 @@ export function CardPicker({
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(7,22,10,0.85)',
+              background: 'rgba(7,22,10,0.7)',
               zIndex: 100,
             }}
           />
@@ -56,20 +93,14 @@ export function CardPicker({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             style={{
-              position: 'fixed',
+              ...computePos(),
               zIndex: 101,
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               background: 'var(--felt-mid)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 8,
-              padding: 20,
-              maxWidth: '95vw',
-              maxHeight: '95vh',
-              overflow: 'auto',
+              padding: pad,
             }}
             onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           >
@@ -95,8 +126,8 @@ export function CardPicker({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(13, auto)',
-                gap: 4,
+                gridTemplateColumns: `repeat(13, ${cellW}px)`,
+                gap: cellGap,
                 marginTop: 8,
               }}
             >
@@ -113,15 +144,13 @@ export function CardPicker({
                     <button
                       key={key}
                       onClick={() => {
-                        if (!isDead) {
-                          onSelect(card)
-                        }
+                        if (!isDead) onSelect(card)
                       }}
                       style={{
-                        width: 40,
-                        height: 54,
+                        width: cellW,
+                        height: cellH,
                         background: 'var(--ivory)',
-                        borderRadius: 4,
+                        borderRadius: 3,
                         border: isCurrent
                           ? `2px solid ${playerColor}`
                           : '1px solid transparent',
@@ -153,8 +182,8 @@ export function CardPicker({
                         ;(e.currentTarget as HTMLButtonElement).style.filter = 'none'
                       }}
                     >
-                      <span style={{ fontSize: 11, lineHeight: 1 }}>{rankLabel(rank)}</span>
-                      <span style={{ fontSize: 10, lineHeight: 1 }}>{SUIT_SYMBOLS[suit]}</span>
+                      <span style={{ fontSize: isMobile ? 9 : 11, lineHeight: 1 }}>{rankLabel(rank)}</span>
+                      <span style={{ fontSize: isMobile ? 8 : 10, lineHeight: 1 }}>{SUIT_SYMBOLS[suit]}</span>
                     </button>
                   )
                 })

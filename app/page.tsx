@@ -83,6 +83,7 @@ export default function Home() {
 
   const [shakeState, setShakeState] = useState<'idle' | 'badBeat' | 'twoOuter'>('idle')
   const [feltFlash, setFeltFlash] = useState(false)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
 
   // Bad beat detection — runs after river result is set
   useEffect(() => {
@@ -181,15 +182,17 @@ export default function Home() {
           if (pickerTarget) {
             updateCard(pickerTarget.playerId, pickerTarget.cardIndex, card)
             closePicker()
+            setAnchorRect(null)
           }
         }}
-        onClose={closePicker}
+        onClose={() => { closePicker(); setAnchorRect(null) }}
         deadCards={pickerDeadCards}
         currentCard={pickerCurrentCard}
         playerColor={pickerPlayerColor}
         outsCards={street >= 1 && street <= 2 ? outs : []}
         outsBeneficiary={street >= 1 && street <= 2 ? outsBeneficiary : []}
         playerColors={PLAYER_COLORS}
+        anchorRect={anchorRect}
       />
 
       {/* Main content with shake wrapper */}
@@ -306,7 +309,7 @@ export default function Home() {
             color: PLAYER_COLORS[p.id]?.main ?? 'var(--gold)',
           }))}
           isCalculating={isCalculating}
-          onCardClick={(playerId, cardIndex) => openPicker(playerId, cardIndex)}
+          onCardClick={(playerId, cardIndex, rect) => { setAnchorRect(rect); openPicker(playerId, cardIndex) }}
           onRemovePlayer={removePlayer}
           onCardsChange={(playerId, newCards) => {
             updateCard(playerId, 0, newCards[0])

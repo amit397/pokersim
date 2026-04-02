@@ -14,7 +14,7 @@ export type PlayerGridEntry = {
 export type PlayersGridProps = {
   players: PlayerGridEntry[]
   isCalculating: boolean
-  onCardClick: (playerId: string, cardIndex: 0 | 1) => void
+  onCardClick: (playerId: string, cardIndex: 0 | 1, rect: DOMRect) => void
   onRemovePlayer: (playerId: string) => void
   onCardsChange: (playerId: string, newCards: [CardType, CardType]) => void
   allDeadCards: CardType[]
@@ -40,7 +40,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isCalculating={isCalculating}
           isHero={players[0].id === 'hero'}
           size="md"
-          onCardClick={(cardIndex) => onCardClick(players[0].id, cardIndex)}
+          onCardClick={(cardIndex, rect) => onCardClick(players[0].id, cardIndex, rect)}
           onRemove={players[0].id !== 'hero' && players.length > 2 ? () => onRemovePlayer(players[0].id) : undefined}
           deadCards={deadCardsFor(players[0].id)}
           onCardsChange={(newCards) => onCardsChange(players[0].id, newCards)}
@@ -57,7 +57,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isCalculating={isCalculating}
           isHero={players[1].id === 'hero'}
           size="md"
-          onCardClick={(cardIndex) => onCardClick(players[1].id, cardIndex)}
+          onCardClick={(cardIndex, rect) => onCardClick(players[1].id, cardIndex, rect)}
           onRemove={players[1].id !== 'hero' && players.length > 2 ? () => onRemovePlayer(players[1].id) : undefined}
           deadCards={deadCardsFor(players[1].id)}
           onCardsChange={(newCards) => onCardsChange(players[1].id, newCards)}
@@ -79,7 +79,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isCalculating={isCalculating}
           isHero={p.id === 'hero'}
           size="md"
-          onCardClick={(cardIndex) => onCardClick(p.id, cardIndex)}
+          onCardClick={(cardIndex, rect) => onCardClick(p.id, cardIndex, rect)}
           onRemove={p.id !== 'hero' && players.length > 2 ? () => onRemovePlayer(p.id) : undefined}
           deadCards={deadCardsFor(p.id)}
           onCardsChange={(newCards) => onCardsChange(p.id, newCards)}
