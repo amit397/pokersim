@@ -14,7 +14,7 @@ export type PlayerPanelProps = {
   isCalculating: boolean
   isHero: boolean
   size?: 'sm' | 'md'    // card size
-  onCardClick: (cardIndex: 0 | 1) => void
+  onCardClick: (cardIndex: 0 | 1, rect: DOMRect) => void
   onRemove?: () => void
   deadCards?: CardType[]
   onCardsChange?: (newCards: [CardType, CardType]) => void
@@ -87,14 +87,20 @@ export function PlayerPanel({
       {/* Hole cards */}
       <div style={{ display: 'flex', gap: 7 }}>
         {cards.map((card, i) => (
-          <Card
+          <div
             key={i}
-            card={card}
-            animate={false}
-            size={size}
-            interactive={true}
-            onClick={() => onCardClick(i as 0 | 1)}
-          />
+            onClick={(e) => {
+              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+              onCardClick(i as 0 | 1, rect)
+            }}
+          >
+            <Card
+              card={card}
+              animate={false}
+              size={size}
+              interactive={true}
+            />
+          </div>
         ))}
       </div>
 
