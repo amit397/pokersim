@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { type Card, cardKey } from '@/lib/deck'
 import { parseCardString, formatCards } from '@/lib/parseCards'
@@ -14,6 +14,11 @@ export type CardInputProps = {
 export function CardInput({ cards, onChange, deadCards }: CardInputProps) {
   const [value, setValue] = useState(formatCards(cards))
   const [shaking, setShaking] = useState(false)
+
+  // Sync text when cards change externally (scenario switch, randomize, card picker)
+  useEffect(() => {
+    setValue(formatCards(cards))
+  }, [cards[0].r, cards[0].s, cards[1].r, cards[1].s])
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const deadSet = new Set(deadCards.map(cardKey))

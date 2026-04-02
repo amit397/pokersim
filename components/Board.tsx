@@ -1,6 +1,5 @@
 'use client'
 
-import { useRef } from 'react'
 import { type Card as CardType } from '@/lib/deck'
 import { Card } from './Card'
 import { CardSlot } from './CardSlot'
@@ -11,17 +10,12 @@ export type BoardProps = {
 }
 
 export function Board({ board, size = 'md' }: BoardProps) {
-  // Track previously rendered card count so we only animate newly-dealt cards
-  const prevCountRef = useRef(0)
-  const prevCount = prevCountRef.current
-  prevCountRef.current = board.length
-
   const gap = size === 'md' ? 10 : 6
 
-  // Stagger delays: flop cards (0,1,2) get 0s, 0.16s, 0.32s stagger
-  // Turn (index 3) and river (index 4) get no stagger
+  // Stagger delay for flop cards (indices 0-2) only.
+  // Turn/river (index 3/4) appear instantly.
   const getDelay = (index: number): number => {
-    if (index < 3 && prevCount === 0) return index * 0.16
+    if (index < 3 && board.length <= 3) return index * 0.16
     return 0
   }
 
@@ -48,19 +42,21 @@ export function Board({ board, size = 'md' }: BoardProps) {
       <div style={{ display: 'flex', gap, justifyContent: 'center' }}>
         {Array.from({ length: 5 }, (_, i) => {
           const card = board[i]
-          const isNewlyDealt = card !== undefined && i >= prevCount
           if (card) {
+            // Key includes card identity so the component mounts fresh when a card
+            // first appears, triggering the flip animation. Subsequent re-renders
+            // (e.g. equity updates) keep the same key so the animation isn't interrupted.
             return (
               <Card
-                key={i}
+                key={`${i}-${card.r}${card.s}`}
                 card={card}
-                animate={isNewlyDealt}
-                delay={isNewlyDealt ? getDelay(i) : 0}
+                animate={true}
+                delay={getDelay(i)}
                 size={size}
               />
             )
           }
-          return <CardSlot key={i} size={size} />
+          return <CardSlot key={`empty-${i}`} size={size} />
         })}
       </div>
     </div>

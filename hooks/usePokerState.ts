@@ -8,7 +8,7 @@ import { useEquity } from '@/hooks/useEquity'
 
 // ---- Types ----
 
-type Player = {
+export type Player = {
   id: string
   label: string
   cards: [Card, Card]
@@ -48,6 +48,7 @@ type Action =
   | { type: 'OPEN_PICKER'; playerId: string; cardIndex: 0 | 1 }
   | { type: 'CLOSE_PICKER' }
   | { type: 'RANDOMIZE_ALL' }
+  | { type: 'LOAD_SHARED_HAND'; players: Player[]; fullBoard: Card[] }
 
 // ---- Helpers ----
 
@@ -274,6 +275,24 @@ function reducer(state: GameState, action: Action): GameState {
       }
     }
 
+    case 'LOAD_SHARED_HAND': {
+      return {
+        ...state,
+        players: action.players,
+        board: [],
+        fullBoard: action.fullBoard,
+        street: 0,
+        isDealing: false,
+        activeScenarioId: null,
+        equityHistory: [],
+        result: null,
+        pickerTarget: null,
+        outs: [],
+        outsBeneficiary: [],
+        calcTriggerKey: state.calcTriggerKey + 1,
+      }
+    }
+
     default: {
       const _exhaustive: never = action
       return _exhaustive
@@ -395,6 +414,11 @@ export function usePokerState() {
     }, animDelay)
   }, [state, calculate])
 
+  // Stable ref to deal — always points to the latest version, used by URL replay
+  // so setTimeout callbacks in the replay useEffect don't capture a stale closure
+  const dealRef = useRef(deal)
+  dealRef.current = deal
+
   // Select scenario
   const selectScenario = useCallback((scenario: Scenario) => {
     dispatch({ type: 'SELECT_SCENARIO', scenario })
@@ -430,7 +454,10 @@ export function usePokerState() {
     canAddPlayer: state.players.length < 6,
     selectScenario,
     deal,
+    dealRef,
     reset,
+    loadSharedHand: (players: Player[], fullBoard: Card[]) =>
+      dispatch({ type: 'LOAD_SHARED_HAND', players, fullBoard }),
     updateCard: (playerId: string, cardIndex: 0 | 1, newCard: Card) =>
       dispatch({ type: 'UPDATE_CARD', playerId, cardIndex, newCard }),
     addPlayer: () => dispatch({ type: 'ADD_PLAYER' }),
