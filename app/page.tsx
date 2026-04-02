@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { SCENARIOS, PLAYER_COLORS } from '@/lib/scenarios'
-import { usePokerState } from '@/hooks/usePokerState'
+import { SCENARIOS, PLAYER_COLORS, PLAYER_LABELS } from '@/lib/scenarios'
+import { usePokerState, type Player } from '@/hooks/usePokerState'
 import { EquityBar } from '@/components/EquityBar'
 import { EquityLegend } from '@/components/EquityLegend'
 import { EquityNumber } from '@/components/EquityNumber'
@@ -18,6 +18,7 @@ import { AddPlayerButton } from '@/components/AddPlayerButton'
 import { CardPicker } from '@/components/CardPicker'
 import { ShareButton } from '@/components/ShareButton'
 import { decodeHandState } from '@/lib/parseUrl'
+import { mkDeck, shuf, strip, type Card } from '@/lib/deck'
 
 // Screen shake variants
 const shakeVariants: Variants = {
@@ -33,13 +34,16 @@ const shakeVariants: Variants = {
 }
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const state = usePokerState()
   const {
     players, board, street, isDealing, isCalculating,
     activeScenarioId, result, equityHistory, outs, outsBeneficiary,
     pickerTarget, turnEquity, allDeadCards, canAddPlayer,
-    selectScenario, deal, reset, updateCard, addPlayer,
-    removePlayer, openPicker, closePicker, randomizeAll,
+    selectScenario, deal, dealRef, reset, updateCard, addPlayer,
+    removePlayer, openPicker, closePicker, randomizeAll, loadSharedHand,
   } = state
 
   // URL auto-replay: load shared hand on mount
@@ -47,21 +51,32 @@ export default function Home() {
     if (typeof window === 'undefined') return
     const decoded = decodeHandState(new URLSearchParams(window.location.search))
     if (!decoded) return
-    const extraPlayers = decoded.players.length - 2
-    for (let i = 0; i < extraPlayers; i++) addPlayer()
+
     const playerIds = ['hero', 'p2', 'p3', 'p4', 'p5', 'p6']
-    decoded.players.forEach((cards, i) => {
-      const pid = playerIds[i]
-      if (pid) {
-        updateCard(pid, 0, cards[0])
-        updateCard(pid, 1, cards[1])
-      }
-    })
+    const isHeadsUp = decoded.players.length === 2
+
+    // Build Player objects from decoded URL data
+    const players: Player[] = decoded.players.map((cards, i) => ({
+      id: playerIds[i],
+      label: i === 0 ? 'Hero' : (isHeadsUp ? 'Villain' : (PLAYER_LABELS[playerIds[i]] ?? `Player ${i + 1}`)),
+      cards: cards as [Card, Card],
+      equity: 0,
+    }))
+
+    // Reconstruct fullBoard: decoded board cards first, then random remainder
+    const dead = [...decoded.players.flat(), ...decoded.board]
+    const remaining = shuf(strip(mkDeck(), dead)).slice(0, 5 - decoded.board.length)
+    const fullBoard = [...decoded.board, ...remaining]
+
+    // Load in one atomic dispatch — no stale closure risk
+    loadSharedHand(players, fullBoard)
+
+    // Chain deals using dealRef so each call uses the latest deal function
     const boardLen = decoded.board.length
     if (boardLen >= 3) {
-      setTimeout(() => deal(), 100)
-      if (boardLen >= 4) setTimeout(() => deal(), 1300)
-      if (boardLen === 5) setTimeout(() => deal(), 2500)
+      setTimeout(() => dealRef.current(), 100)
+      if (boardLen >= 4) setTimeout(() => dealRef.current(), 1300)
+      if (boardLen === 5) setTimeout(() => dealRef.current(), 2500)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -135,6 +150,9 @@ export default function Home() {
         return !(targetCard && c.r === targetCard.r && c.s === targetCard.s)
       })
     : allDeadCards
+
+  // Suppress SSR render to avoid hydration mismatch from random card generation
+  if (!mounted) return null
 
   return (
     <>
@@ -255,6 +273,15 @@ export default function Home() {
         {/* Board */}
         <Board board={board} />
 
+        {/* Result Banner — visible directly under board after river */}
+        {street === 3 && (
+          <ResultBanner
+            visible={result !== null}
+            text={result?.text ?? ''}
+            type={result?.type ?? 'hero'}
+          />
+        )}
+
         {/* Outs Tray */}
         <OutsTray
           outs={outs}
@@ -292,13 +319,6 @@ export default function Home() {
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <AddPlayerButton visible={canAddPlayer} onClick={addPlayer} />
         </div>
-
-        {/* Result Banner */}
-        <ResultBanner
-          visible={result !== null}
-          text={result?.text ?? ''}
-          type={result?.type ?? 'hero'}
-        />
 
         {/* Share Button — visible only after river result */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
