@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+:root {
+  --felt:        #07160a;
+  --felt-mid:    #0e2210;
+  --felt-light:  #152d17;
+  --gold:        #b8943a;
+  --gold-dim:    #7a5f22;
+  --steel:       #4a85b0;
+  --steel-dim:   #2d5570;
+  --teal:        #4a9e8a;
+  --teal-dim:    #2d6b5c;
+  --coral:       #b06050;
+  --coral-dim:   #7a4238;
+  --violet:      #9080b8;
+  --violet-dim:  #635890;
+  --slate:       #8894a0;
+  --slate-dim:   #5c6670;
+  --ivory:       #f6f0e2;
+  --ivory-dim:   #e8dfc8;
+  --parchment:   #ddd5bc;
+  --ghost:       #4a6650;
+  --red-suit:    #b52b2b;
+  --black-suit:  #111111;
+}
+
+body {
+  background-color: var(--felt);
+  color: var(--parchment);
+  min-height: 100vh;
+  font-family: var(--font-display), Georgia, serif;
+}
+
+/* Felt grain overlay via SVG filter defined in layout.tsx */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  filter: url(#felt-grain);
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.font-mono {
+  font-family: var(--font-mono), 'IBM Plex Mono', monospace;
+}
