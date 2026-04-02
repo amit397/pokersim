@@ -114,7 +114,7 @@ export function CardPicker({
                 onClick={onClose}
                 style={{
                   background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  border: 'none',
                   borderRadius: 4,
                   color: 'var(--ghost)',
                   cursor: 'pointer',
