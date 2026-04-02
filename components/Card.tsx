@@ -88,7 +88,7 @@ export function Card({ card, animate = false, delay = 0, size = 'md', interactiv
         transform: 'translate(-50%, -50%)',
         fontSize: dim.suitCenter,
         color: textColor,
-        opacity: 0.1,
+        opacity: 1,
         lineHeight: 1,
         pointerEvents: 'none',
       }}>

@@ -319,12 +319,12 @@ export default function Home() {
         />
 
         {/* Add Player */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16 }}>
           <AddPlayerButton visible={canAddPlayer} onClick={addPlayer} />
         </div>
 
         {/* Share Button — visible only after river result */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16 }}>
           <ShareButton
             visible={street === 3 && result !== null}
             players={players.map(p => p.cards)}
