@@ -39,7 +39,7 @@ export default function Home() {
     activeScenarioId, result, equityHistory, outs, outsBeneficiary,
     pickerTarget, turnEquity, allDeadCards, canAddPlayer,
     selectScenario, deal, reset, updateCard, addPlayer,
-    removePlayer, openPicker, closePicker,
+    removePlayer, openPicker, closePicker, randomizeAll,
   } = state
 
   // URL auto-replay: load shared hand on mount
@@ -47,10 +47,8 @@ export default function Home() {
     if (typeof window === 'undefined') return
     const decoded = decodeHandState(new URLSearchParams(window.location.search))
     if (!decoded) return
-    // Add extra players if needed
     const extraPlayers = decoded.players.length - 2
     for (let i = 0; i < extraPlayers; i++) addPlayer()
-    // Update each player's cards
     const playerIds = ['hero', 'p2', 'p3', 'p4', 'p5', 'p6']
     decoded.players.forEach((cards, i) => {
       const pid = playerIds[i]
@@ -59,7 +57,6 @@ export default function Home() {
         updateCard(pid, 1, cards[1])
       }
     })
-    // Deal board cards with staggered delays
     const boardLen = decoded.board.length
     if (boardLen >= 3) {
       setTimeout(() => deal(), 100)
@@ -118,8 +115,12 @@ export default function Home() {
   }))
   const prevEquity = equityHistory.length > 0 ? equityHistory[equityHistory.length - 1] : undefined
 
-  // Hero sparkline history (index 0 = hero)
-  const sparklineHistory = equityHistory.map(eq => eq[0] ?? 50)
+  // Sparkline players (id, label, color)
+  const sparklinePlayers = players.map(p => ({
+    id: p.id,
+    label: p.label,
+    color: PLAYER_COLORS[p.id]?.main ?? 'var(--gold)',
+  }))
 
   // Card picker current card
   const pickerCurrentCard = pickerTarget
@@ -128,7 +129,6 @@ export default function Home() {
   const pickerPlayerColor = pickerTarget
     ? PLAYER_COLORS[pickerTarget.playerId]?.main ?? 'var(--gold)'
     : 'var(--gold)'
-  // Dead cards for picker: all cards except the one being replaced
   const pickerDeadCards = pickerTarget
     ? allDeadCards.filter(c => {
         const targetCard = players.find(p => p.id === pickerTarget.playerId)?.cards[pickerTarget.cardIndex]
@@ -213,9 +213,6 @@ export default function Home() {
                   {players[0]?.label ?? 'Hero'}
                 </p>
                 <EquityNumber value={players[0]?.equity ?? 0} color={PLAYER_COLORS.hero.main} size="lg" isCalculating={isCalculating} />
-                <p className="font-mono" style={{ fontSize: 11, color: 'var(--ghost)', marginTop: 2 }}>
-                  {/* scenario story or hand name placeholder */}
-                </p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p className="font-mono" style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ghost)' }}>
@@ -246,11 +243,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Sparkline */}
-        {sparklineHistory.length > 0 && (
-          <EquitySparkline history={sparklineHistory} />
-        )}
-
         {/* Street info */}
         <p className="font-mono" style={{
           textAlign: 'center', fontSize: 10, letterSpacing: 2,
@@ -269,6 +261,12 @@ export default function Home() {
           outsBeneficiary={outsBeneficiary}
           playerColors={PLAYER_COLORS}
           visible={street === 1 || street === 2}
+        />
+
+        {/* Equity Sparkline — only after all 5 cards dealt, between board and players */}
+        <EquitySparkline
+          equityHistory={equityHistory}
+          players={sparklinePlayers}
         />
 
         {/* Players */}
@@ -317,6 +315,7 @@ export default function Home() {
           isDealing={isDealing}
           onDeal={deal}
           onReset={reset}
+          onRandomize={randomizeAll}
         />
       </motion.div>
     </>

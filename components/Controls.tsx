@@ -7,11 +7,12 @@ export type ControlsProps = {
   isDealing: boolean   // true while cards are animating in (button disabled)
   onDeal: () => void
   onReset: () => void
+  onRandomize: () => void
 }
 
 const DEAL_LABELS = ['Deal Flop', 'Deal Turn', 'Deal River']
 
-export function Controls({ street, isDealing, onDeal, onReset }: ControlsProps) {
+export function Controls({ street, isDealing, onDeal, onReset, onRandomize }: ControlsProps) {
   const dealLabel = street >= 3 ? 'River Dealt' : DEAL_LABELS[street] ?? 'Deal'
   const dealDisabled = isDealing || street >= 3
 
@@ -45,7 +46,7 @@ export function Controls({ street, isDealing, onDeal, onReset }: ControlsProps) 
   }
 
   return (
-    <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+    <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
       <button
         style={primaryBtn}
         onClick={dealDisabled ? undefined : onDeal}
@@ -76,6 +77,18 @@ export function Controls({ street, isDealing, onDeal, onReset }: ControlsProps) 
         }}
       >
         New Hand
+      </button>
+      <button
+        style={secondaryBtn}
+        onClick={onRandomize}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+        }}
+      >
+        Randomize
       </button>
     </div>
   )
