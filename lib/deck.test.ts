@@ -23,7 +23,7 @@ describe('mkDeck', () => {
 
   it('all ranks are 2–14', () => {
     const deck = mkDeck()
-    const ranks = [...new Set(deck.map(c => c.r))].sort((a, b) => a - b)
+    const ranks = Array.from(new Set(deck.map(c => c.r))).sort((a, b) => a - b)
     expect(ranks).toEqual([2,3,4,5,6,7,8,9,10,11,12,13,14])
   })
 })

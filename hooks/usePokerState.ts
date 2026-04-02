@@ -44,6 +44,7 @@ type Action =
   | { type: 'REMOVE_PLAYER'; playerId: string }
   | { type: 'OPEN_PICKER'; playerId: string; cardIndex: 0 | 1 }
   | { type: 'CLOSE_PICKER' }
+  | { type: 'RANDOMIZE_ALL' }
 
 // ---- Helpers ----
 
@@ -242,6 +243,33 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, pickerTarget: null }
     }
 
+    case 'RANDOMIZE_ALL': {
+      // Deal fresh random cards to every player from a shrinking deck
+      const shuffled = shuf(mkDeck())
+      let remaining = shuffled
+      const newPlayers = state.players.map(p => {
+        const c1 = remaining[0]
+        const c2 = remaining[1]
+        remaining = remaining.slice(2)
+        return { ...p, cards: [c1, c2] as [Card, Card] }
+      })
+      const allDead = newPlayers.flatMap(p => p.cards)
+      const fullBoard = shuf(strip(mkDeck(), allDead)).slice(0, 5)
+      return {
+        ...state,
+        players: newPlayers,
+        board: [],
+        fullBoard,
+        street: 0,
+        isDealing: false,
+        result: null,
+        equityHistory: [],
+        outs: [],
+        outsBeneficiary: [],
+        pickerTarget: null,
+      }
+    }
+
     default: {
       const _exhaustive: never = action
       return _exhaustive
@@ -413,5 +441,6 @@ export function usePokerState() {
     openPicker: (playerId: string, cardIndex: 0 | 1) =>
       dispatch({ type: 'OPEN_PICKER', playerId, cardIndex }),
     closePicker: () => dispatch({ type: 'CLOSE_PICKER' }),
+    randomizeAll: () => dispatch({ type: 'RANDOMIZE_ALL' }),
   }
 }
