@@ -104,23 +104,28 @@ export function CardPicker({
             }}
             onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--ghost)',
-                cursor: 'pointer',
-                fontSize: 16,
-                lineHeight: 1,
-              }}
-            >
-              ✕
-            </button>
+            {/* Header row: close button sits in its own row, never overlaps the grid */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: isMobile ? 6 : 10,
+            }}>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 4,
+                  color: 'var(--ghost)',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  lineHeight: 1,
+                  padding: isMobile ? '5px 9px' : '4px 8px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
 
             {/* Grid: 4 suits × 13 ranks */}
             <div
@@ -128,7 +133,6 @@ export function CardPicker({
                 display: 'grid',
                 gridTemplateColumns: `repeat(13, ${cellW}px)`,
                 gap: cellGap,
-                marginTop: 8,
               }}
             >
               {SUITS.map(suit =>
