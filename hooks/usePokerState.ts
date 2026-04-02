@@ -30,6 +30,9 @@ type GameState = {
     text: string
     type: 'hero' | 'villain' | 'split'
   } | null
+  // Incremented on every action that requires a new preflop equity calc.
+  // Watched alongside workerVersion so we never miss a trigger.
+  calcTriggerKey: number
 }
 
 type Action =
@@ -50,13 +53,11 @@ type Action =
 
 function resolveScenarioPlayers(players: Scenario['players']): Player[] {
   const dead: Card[] = []
-  // First pass: collect all non-placeholder cards as dead
   for (const p of players) {
     for (const c of p.cards) {
       if (!isPlaceholder(c)) dead.push(c)
     }
   }
-  // Second pass: assign placeholders
   return players.map(p => {
     const resolvedCards = p.cards.map(card => {
       if (isPlaceholder(card)) {
@@ -97,6 +98,7 @@ function reducer(state: GameState, action: Action): GameState {
         pickerTarget: null,
         outs: [],
         outsBeneficiary: [],
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -114,7 +116,6 @@ function reducer(state: GameState, action: Action): GameState {
     }
 
     case 'RESET': {
-      // Re-shuffle the board, keep players' cards, reset board/street/result
       const fullBoard = buildFullBoard(state.players)
       return {
         ...state,
@@ -127,6 +128,7 @@ function reducer(state: GameState, action: Action): GameState {
         pickerTarget: null,
         outs: [],
         outsBeneficiary: [],
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -150,7 +152,6 @@ function reducer(state: GameState, action: Action): GameState {
 
     case 'UPDATE_CARD': {
       const { playerId, cardIndex, newCard } = action
-      // Validate: new card not already in use (excluding the card being replaced)
       const otherDeadCards = [
         ...state.players.flatMap(p =>
           p.id === playerId
@@ -180,6 +181,7 @@ function reducer(state: GameState, action: Action): GameState {
         outs: [],
         outsBeneficiary: [],
         pickerTarget: null,
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -210,6 +212,7 @@ function reducer(state: GameState, action: Action): GameState {
         equityHistory: [],
         outs: [],
         outsBeneficiary: [],
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -229,6 +232,7 @@ function reducer(state: GameState, action: Action): GameState {
         equityHistory: [],
         outs: [],
         outsBeneficiary: [],
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -244,7 +248,6 @@ function reducer(state: GameState, action: Action): GameState {
     }
 
     case 'RANDOMIZE_ALL': {
-      // Deal fresh random cards to every player from a shrinking deck
       const shuffled = shuf(mkDeck())
       let remaining = shuffled
       const newPlayers = state.players.map(p => {
@@ -267,6 +270,7 @@ function reducer(state: GameState, action: Action): GameState {
         outs: [],
         outsBeneficiary: [],
         pickerTarget: null,
+        calcTriggerKey: state.calcTriggerKey + 1,
       }
     }
 
@@ -296,6 +300,7 @@ function buildInitialState(): GameState {
     outsBeneficiary: [],
     pickerTarget: null,
     result: null,
+    calcTriggerKey: 1,
   }
 }
 
@@ -303,7 +308,7 @@ function buildInitialState(): GameState {
 
 export function usePokerState() {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
-  const { result: equityResult, isCalculating, calculate } = useEquity()
+  const { result: equityResult, isCalculating, calculate, workerVersion } = useEquity()
 
   // When equity result arrives from worker, dispatch SET_EQUITY
   useEffect(() => {
@@ -316,12 +321,26 @@ export function usePokerState() {
     })
   }, [equityResult])
 
-  // Trigger equity calculation
+  // Keep a stable ref to triggerCalc so the calc effect doesn't need it as a dep
   const triggerCalc = useCallback(() => {
     const playerIds = state.players.map(p => p.id)
     const playerCards = state.players.map(p => p.cards)
     calculate(playerCards, playerIds, state.board)
   }, [state.players, state.board, calculate])
+
+  const triggerCalcRef = useRef(triggerCalc)
+  triggerCalcRef.current = triggerCalc
+
+  // Fire a preflop equity calc whenever:
+  //   - calcTriggerKey changes (new scenario, randomize, card update, add/remove player)
+  //   - workerVersion changes (worker re-initialized, e.g. React StrictMode double-mount)
+  // Using a ref for triggerCalc avoids this effect re-running on every player state change.
+  useEffect(() => {
+    if (state.board.length !== 0 || state.street !== 0) return
+    if (workerVersion === 0) return  // worker not ready yet
+    triggerCalcRef.current()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.calcTriggerKey, workerVersion])
 
   // Deal function — advances street, animates cards
   const deal = useCallback(() => {
@@ -334,17 +353,14 @@ export function usePokerState() {
       return state.fullBoard.slice(0, 5)
     })()
 
-    // Wait for card animations, then complete deal + run equity
-    const animDelay = state.street === 0 ? 650 : 450 // flop takes longer (3 cards + stagger)
+    const animDelay = state.street === 0 ? 650 : 450
     setTimeout(() => {
       dispatch({ type: 'DEAL_COMPLETE', newBoard })
       const nextStreet = state.street + 1
       if (nextStreet < 3) {
-        // Run equity after flop/turn
         const playerIds = state.players.map(p => p.id)
         calculate(state.players.map(p => p.cards), playerIds, newBoard)
       } else {
-        // River: evaluate winner, don't need Monte Carlo
         const results = state.players.map(p => best(p.cards, newBoard))
         const maxScore = Math.max(...results.map(r => r.score))
         const tiedIndices = results.reduce<number[]>((acc, r, i) => {
@@ -390,25 +406,6 @@ export function usePokerState() {
     if (sc) dispatch({ type: 'SELECT_SCENARIO', scenario: sc })
     else dispatch({ type: 'SELECT_SCENARIO', scenario: SCENARIOS[0] })
   }, [state.activeScenarioId])
-
-  // Trigger calc whenever scenario/players change (on SELECT_SCENARIO and resets)
-  const prevScenarioRef = useRef<string | null>(null)
-  const prevPlayerKeysRef = useRef<string>('')
-  useEffect(() => {
-    const playerKey = state.players
-      .map(p => `${p.id}:${p.cards.map(cardKey).join(',')}`)
-      .join('|')
-    if (
-      state.board.length === 0 &&
-      state.street === 0 &&
-      (state.activeScenarioId !== prevScenarioRef.current ||
-        playerKey !== prevPlayerKeysRef.current)
-    ) {
-      prevScenarioRef.current = state.activeScenarioId
-      prevPlayerKeysRef.current = playerKey
-      triggerCalc()
-    }
-  }, [state.players, state.board, state.street, state.activeScenarioId, triggerCalc])
 
   // Derived
   const allDeadCards = [

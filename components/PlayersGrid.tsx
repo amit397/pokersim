@@ -41,7 +41,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isHero={players[0].id === 'hero'}
           size="md"
           onCardClick={(cardIndex) => onCardClick(players[0].id, cardIndex)}
-          onRemove={players[0].id !== 'hero' ? () => onRemovePlayer(players[0].id) : undefined}
+          onRemove={players[0].id !== 'hero' && players.length > 2 ? () => onRemovePlayer(players[0].id) : undefined}
           deadCards={deadCardsFor(players[0].id)}
           onCardsChange={(newCards) => onCardsChange(players[0].id, newCards)}
         />
@@ -58,7 +58,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isHero={players[1].id === 'hero'}
           size="md"
           onCardClick={(cardIndex) => onCardClick(players[1].id, cardIndex)}
-          onRemove={players[1].id !== 'hero' ? () => onRemovePlayer(players[1].id) : undefined}
+          onRemove={players[1].id !== 'hero' && players.length > 2 ? () => onRemovePlayer(players[1].id) : undefined}
           deadCards={deadCardsFor(players[1].id)}
           onCardsChange={(newCards) => onCardsChange(players[1].id, newCards)}
         />
@@ -80,7 +80,7 @@ export function PlayersGrid({ players, isCalculating, onCardClick, onRemovePlaye
           isHero={p.id === 'hero'}
           size="md"
           onCardClick={(cardIndex) => onCardClick(p.id, cardIndex)}
-          onRemove={p.id !== 'hero' ? () => onRemovePlayer(p.id) : undefined}
+          onRemove={p.id !== 'hero' && players.length > 2 ? () => onRemovePlayer(p.id) : undefined}
           deadCards={deadCardsFor(p.id)}
           onCardsChange={(newCards) => onCardsChange(p.id, newCards)}
         />

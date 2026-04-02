@@ -5,9 +5,9 @@ import { type Card } from '@/lib/deck'
 import { encodeHandState } from '@/lib/parseUrl'
 
 export type ShareButtonProps = {
-  players: Card[][]     // array of hole card pairs, one per player
-  board: Card[]         // all 5 board cards
-  visible: boolean      // only show after river
+  players: Card[][]
+  board: Card[]
+  visible: boolean
 }
 
 export function ShareButton({ players, board, visible }: ShareButtonProps) {
@@ -22,7 +22,6 @@ export function ShareButton({ players, board, visible }: ShareButtonProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     }).catch(() => {
-      // Fallback: prompt with URL
       window.prompt('Copy this URL:', url)
     })
   }
@@ -32,18 +31,23 @@ export function ShareButton({ players, board, visible }: ShareButtonProps) {
       onClick={handleShare}
       style={{
         background: 'transparent',
-        border: '1px solid rgba(255,255,255,0.2)',
-        color: copied ? 'var(--teal)' : 'var(--ghost)',
-        padding: '7px 18px',
+        border: `1px solid ${copied ? 'var(--teal)' : 'var(--gold)'}`,
+        color: copied ? 'var(--teal)' : 'var(--gold)',
+        padding: '10px 26px',
         borderRadius: 4,
         cursor: 'pointer',
         fontFamily: 'var(--font-mono), monospace',
-        fontSize: 10,
+        fontSize: 11,
         letterSpacing: 2,
         textTransform: 'uppercase',
-        transition: 'color 0.2s, border-color 0.2s',
+        transition: 'color 0.2s, border-color 0.2s, background 0.2s',
         marginTop: 8,
-        borderColor: copied ? 'var(--teal)' : 'rgba(255,255,255,0.2)',
+      }}
+      onMouseEnter={e => {
+        if (!copied) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(184,148,58,0.09)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
       }}
     >
       {copied ? 'Copied' : 'Share this hand'}
