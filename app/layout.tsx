@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Poker Equity Visualizer',
+  title: 'Poker Equity Engine',
   description: 'Watch probability shift with every card.',
 }
 
