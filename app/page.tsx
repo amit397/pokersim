@@ -207,7 +207,7 @@ export default function Home() {
           textAlign: 'center', fontSize: 10, letterSpacing: 4,
           textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 4,
         }}>
-          Poker Equity Visualizer
+          Poker Equity Engine
         </p>
         <h1 style={{
           textAlign: 'center', fontSize: 'clamp(20px, 4vw, 26px)',
